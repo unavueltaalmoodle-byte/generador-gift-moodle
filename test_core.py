@@ -26,6 +26,34 @@ class ConverterTests(unittest.TestCase):
             with self.subTest(text=text), self.assertRaises(FormatError):
                 parse_questions(text)
 
+    def test_final_periods_preserve_answer_and_feedback(self):
+        for closing, feedback in [('A.', ''), ('a .', ''),
+                                  ('A (Explicación).', 'Explicación'),
+                                  ('A. (Explicación).', 'Explicación'),
+                                  ('A (Relación (x=2).).', 'Relación (x=2).')]:
+            with self.subTest(closing=closing):
+                questions = parse_questions('¿Pregunta?\nA) Uno\nB) Dos\nOpción correcta: ' + closing)
+                self.assertEqual(questions[0].correct, 'A')
+                self.assertEqual(questions[0].feedback, feedback)
+                self.assertEqual(make_gift(questions).count('=Uno'), 1)
+
+    def test_ambiguous_answers_are_still_rejected(self):
+        for closing in ['A..', 'A y B.', 'A/B', 'A) texto', 'A. texto',
+                        'A (Explicación). texto', 'A (sin cierre']:
+            with self.subTest(closing=closing), self.assertRaises(FormatError):
+                parse_questions('¿Pregunta?\nA) Uno\nB) Dos\nOpción correcta: ' + closing)
+
+    def test_error_numbers_do_not_depend_on_valid_questions(self):
+        text = ('1. Primera pregunta\nA) Uno\nB) Dos\nOpción correcta: X\n\n'
+                '2. Segunda pregunta\nA) Uno\nB) Dos\nOpción correcta: A y B\n\n'
+                '3. Tercera pregunta\nA) Uno\nB) Dos')
+        with self.assertRaises(FormatError) as error:
+            parse_questions(text)
+        message = str(error.exception)
+        self.assertIn('Pregunta 1 («Primera pregunta») · línea 4', message)
+        self.assertIn('Pregunta 2 («Segunda pregunta») · línea 9', message)
+        self.assertIn('Pregunta 3 («Tercera pregunta»): falta el cierre', message)
+
     def test_special_characters_and_newlines(self):
         self.assertEqual(escape_gift('x={a} ~ b # c: d\\e\nf'), r'x\=\{a\} \~ b \# c\: d\\e\nf')
         q = parse_questions('1. Primera línea\nSegunda línea\nA) x=2\nB) x=3\nRespuesta correcta: a (Relación (x=2))')

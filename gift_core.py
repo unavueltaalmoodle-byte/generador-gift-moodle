@@ -25,6 +25,19 @@ def parse_questions(text):
     questions, errors = [], []
     stem, options, current = [], {}, None
     started_options = False
+    number = 1
+
+    def location(lineno=None):
+        excerpt = ' '.join(stem).strip()
+        if len(excerpt) > 85:
+            excerpt = excerpt[:82] + '…'
+        label = f'Pregunta {number}'
+        if excerpt:
+            label += f' («{excerpt}»)'
+        if lineno is not None:
+            label += f' · línea {lineno}'
+        return label
+
     for lineno, raw in enumerate(text.lstrip('\ufeff').splitlines(), 1):
         line = raw.strip()
         if not line:
@@ -33,36 +46,36 @@ def parse_questions(text):
         option = re.match(r'^([A-Z])\s*[).:-]\s*(.*)$', line, re.I)
         if key:
             value = line.split(':', 1)[1].strip()
-            answer = re.fullmatch(r'([A-Z])\s*(?:\((.*)\))?', value, re.I)
-            number = len(questions) + 1
+            answer = re.fullmatch(r'([A-Z])\s*\.?\s*(?:\((.*)\)\s*\.?)?', value, re.I)
             if not answer:
-                errors.append(f'Línea {lineno}: use «Opción correcta: B» o «Opción correcta: B (explicación)».')
+                errors.append(f'{location(lineno)}: use «Opción correcta: B» o «Opción correcta: B (explicación)».')
             elif not stem or not ' '.join(stem).strip():
-                errors.append(f'Pregunta {number}: falta el enunciado.')
+                errors.append(f'{location(lineno)}: falta el enunciado.')
             elif len(options) < 2:
-                errors.append(f'Pregunta {number}: hacen falta al menos dos opciones.')
+                errors.append(f'{location(lineno)}: hacen falta al menos dos opciones.')
             elif list(options) != [chr(65+i) for i in range(len(options))]:
-                errors.append(f'Pregunta {number}: las opciones deben ser consecutivas desde A.')
+                errors.append(f'{location(lineno)}: las opciones deben ser consecutivas desde A.')
             elif any(not value.strip() for value in options.values()):
-                errors.append(f'Pregunta {number}: hay una opción vacía.')
+                errors.append(f'{location(lineno)}: hay una opción vacía.')
             elif answer.group(1).upper() not in options:
-                errors.append(f'Pregunta {number}: la letra correcta no corresponde a una opción.')
+                errors.append(f'{location(lineno)}: la letra correcta no corresponde a una opción.')
             else:
                 questions.append(Question('\n'.join(stem), options.copy(), answer.group(1).upper(), answer.group(2) or ''))
+            number += 1
             stem, options, current, started_options = [], {}, None, False
         elif option:
             letter, value = option.group(1).upper(), option.group(2)
             if letter in options:
-                errors.append(f'Línea {lineno}: opción {letter} repetida; puede faltar «Opción correcta» en la pregunta anterior.')
+                errors.append(f'{location(lineno)}: opción {letter} repetida; puede faltar «Opción correcta» en la pregunta anterior.')
             options[letter], current, started_options = value, letter, True
         elif started_options:
-            errors.append(f'Línea {lineno}: texto sin etiqueta después de las opciones. Escriba cada opción en una sola línea y cierre con «Opción correcta: letra».')
+            errors.append(f'{location(lineno)}: texto sin etiqueta después de las opciones. Escriba cada opción en una sola línea y cierre con «Opción correcta: letra».')
         else:
             if not stem:
                 line = re.sub(r'^(?:Pregunta\s+)?\d+\s*[).:-]\s*', '', line, flags=re.I)
             stem.append(line)
     if stem or options:
-        errors.append('La última pregunta no termina con «Opción correcta: letra».')
+        errors.append(f'{location()}: falta el cierre «Opción correcta: letra».')
     if errors:
         raise FormatError('\n'.join(errors))
     if not questions:

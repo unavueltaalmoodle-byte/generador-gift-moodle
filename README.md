@@ -1,6 +1,21 @@
 # Generador GIFT para Moodle · Una Vuelta
 
-Primera versión de una microapp en Python y Streamlit. Convierte preguntas de opción múltiple con una sola respuesta correcta a GIFT UTF-8. No utiliza IA ni necesita claves de API.
+Versión 1.1 de una microapp en Python y Streamlit. Convierte preguntas de opción múltiple con una sola respuesta correcta a GIFT UTF-8. No utiliza IA ni necesita claves de API.
+
+## Actualizar la app existente
+
+1. Descomprimir este ZIP.
+2. Abrir el repositorio existente en GitHub: https://github.com/unavueltaalmoodle-byte/generador-gift-moodle.
+3. En **Add file → Upload files**, subir los archivos que están dentro de `generador-gift` a la raíz del repositorio, reemplazando los anteriores. No subir el ZIP ni la carpeta contenedora.
+4. Guardar con **Commit changes**. La app conectada a esa rama incorporará la actualización.
+5. Probar las dos variantes de punto final indicadas abajo y revisar la descarga.
+
+### Cambios de la versión 1.1
+
+- Acepta `Opción correcta: A.` y `Opción correcta: B (explicación).`, también con punto tras la letra antes de la explicación.
+- Los errores indican la pregunta por su orden en el archivo, el inicio del enunciado y la línea del texto procesado. La numeración sigue siendo correcta aunque una pregunta anterior tenga errores.
+- La app muestra el texto con líneas numeradas para ubicar los errores de Word y TXT.
+- Mantiene el bloqueo de la descarga si hay errores; no interpreta varias respuestas como una sola.
 
 ## Publicar desde el navegador
 
@@ -36,6 +51,7 @@ Opción correcta: B (Buenos Aires es la capital de Argentina.)
 - Opciones con letras consecutivas desde A: A), B), C)… Cada opción ocupa una sola línea. Se aceptan también A., A: y A-.
 - Entre 2 y 26 opciones; una sola correcta.
 - Cierre obligatorio: `Opción correcta: B` o `Respuesta correcta: B`.
+- Se admite un punto final después de la letra o del paréntesis de cierre.
 - La explicación opcional entre paréntesis se asigna como retroalimentación de la respuesta correcta.
 - Separar las preguntas con una línea en blanco para facilitar la lectura.
 - TXT: codificación UTF-8. Word: formato DOCX. Tamaño máximo procesado: 10 MB.
@@ -49,7 +65,7 @@ Banco de preguntas → Importar → GIFT → cargar `preguntas_moodle.gift` → 
 
 Si se indicó una categoría en la app, activar **Obtener categoría del archivo**. Si se dejó vacía, seleccionar la categoría de destino en Moodle. La ubicación de estas opciones puede variar según versión y permisos.
 
-Revisar primero en una categoría de prueba las respuestas, la retroalimentación y los caracteres especiales. El conversor valida estructura, no la exactitud disciplinar de las respuestas. No se realizó una importación en el campus de ustedes.
+Revisar primero en una categoría de prueba las respuestas, la retroalimentación y los caracteres especiales. El conversor valida estructura, no la exactitud disciplinar de las respuestas. La versión anterior fue probada por ustedes en Moodle. Conviene repetir una importación de prueba después de actualizar.
 
 ## Datos
 
