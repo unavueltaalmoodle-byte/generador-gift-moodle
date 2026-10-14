@@ -1,5 +1,5 @@
 """Conversión estricta de preguntas de opción múltiple a GIFT (sin IA)."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import re
 import unicodedata
 
@@ -10,6 +10,7 @@ class Question:
     options: dict[str, str]
     correct: str
     feedback: str = ""
+    images: dict = field(default_factory=dict)
 
 
 class FormatError(ValueError):
@@ -21,7 +22,9 @@ def normalized(text):
                    if unicodedata.category(c) != 'Mn')
 
 
-def parse_questions(text):
+def parse_questions(text, images=None):
+    images = images or {}
+    image_token = re.compile(r"\[\[IMAGEN_\d{3,}\]\]")
     questions, errors = [], []
     stem, options, current = [], {}, None
     started_options = False
@@ -60,7 +63,13 @@ def parse_questions(text):
             elif answer.group(1).upper() not in options:
                 errors.append(f'{location(lineno)}: la letra correcta no corresponde a una opción.')
             else:
-                questions.append(Question('\n'.join(stem), options.copy(), answer.group(1).upper(), answer.group(2) or ''))
+                content = '\n'.join(stem) + '\n' + '\n'.join(options.values())
+                tokens = image_token.findall(content)
+                missing = [token for token in tokens if token not in images]
+                if missing:
+                    errors.append(f'{location(lineno)}: faltan los archivos de imágenes; subí el Word original.')
+                else:
+                    questions.append(Question('\n'.join(stem), options.copy(), answer.group(1).upper(), answer.group(2) or '', {token: images[token] for token in tokens}))
             number += 1
             stem, options, current, started_options = [], {}, None, False
         elif option:
@@ -68,6 +77,9 @@ def parse_questions(text):
             if letter in options:
                 errors.append(f'{location(lineno)}: opción {letter} repetida; puede faltar «Opción correcta» en la pregunta anterior.')
             options[letter], current, started_options = value, letter, True
+        elif started_options and image_token.search(line) and not image_token.sub('', line).strip():
+            # Una imagen en un párrafo propio pertenece a la opción anterior.
+            options[current] += '\n' + line
         elif started_options:
             errors.append(f'{location(lineno)}: texto sin etiqueta después de las opciones. Escriba cada opción en una sola línea y cierre con «Opción correcta: letra».')
         else:
@@ -91,6 +103,8 @@ def escape_gift(text):
 
 
 def make_gift(questions, category='', prefix='Pregunta'):
+    if any(q.images for q in questions):
+        raise FormatError('Estas preguntas contienen imágenes. Descargá Moodle XML para conservarlas.')
     parts = []
     if category.strip():
         if '\n' in category or '\r' in category:
