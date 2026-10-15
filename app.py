@@ -6,7 +6,7 @@ from image_xml import read_docx_with_images, make_xml, IMAGE_TOKEN
 st.set_page_config(page_title='Generador GIFT y XML · Una Vuelta', page_icon='📝', layout='centered')
 st.title('Generador GIFT y XML para Moodle')
 st.write('Convertí preguntas de opción múltiple en un archivo listo para importar al banco de preguntas.')
-st.caption('Versión 1.2 · Una respuesta correcta por pregunta · Retroalimentación opcional · Imágenes de Word en Moodle XML')
+st.caption('Versión 1.3 · Una respuesta correcta por pregunta · Retroalimentación opcional · Imágenes de Word en Moodle XML')
 example = Path(__file__).with_name('ejemplo.txt').read_text(encoding='utf-8')
 
 
@@ -30,6 +30,7 @@ def preview(text, images):
 with st.expander('Cómo preparar las preguntas', expanded=True):
     st.write('Escribí las opciones con letras consecutivas: A), B), C)… Cada opción de texto debe ocupar una sola línea. Cerrá cada pregunta con «Opción correcta: B».')
     st.write('Para agregar retroalimentación: «Opción correcta: B (Explicación)». También se acepta un punto después de la letra o del paréntesis. El enunciado puede ocupar varias líneas.')
+    st.write('Para una devolución general de la pregunta, agregá después de «Opción correcta» una línea «Retroalimentación general: explicación». Es opcional y puede coexistir con la devolución entre paréntesis. Escribí toda la devolución en una sola línea o párrafo; el ajuste automático de líneas de Word no afecta la lectura.')
     st.write('Con imágenes: subí un Word (.docx), con imágenes PNG, JPG o GIF insertadas «En línea con el texto». Colocá las imágenes del enunciado antes de A). Para una opción, insertá la imagen junto a su texto o en el párrafo inmediatamente posterior a su letra, antes de la siguiente opción. También podés escribir A) y luego insertar sólo la imagen.')
     st.caption('Las imágenes se guardan dentro del XML. Revisá su ubicación en la vista previa. Se conserva el texto y el orden de las imágenes; no el diseño, las tipografías ni el formato completo de Word.')
     st.code(example, language=None)
@@ -90,6 +91,8 @@ if text.strip():
                     preview(option, question.images)
                 if question.feedback:
                     st.text('Retroalimentación de la opción correcta: ' + question.feedback)
+                if question.general_feedback:
+                    st.text('Retroalimentación general de la pregunta: ' + question.general_feedback)
         if image_count:
             st.info('Estas preguntas contienen imágenes. Descargá Moodle XML para conservarlas.')
             st.download_button('Descargar Moodle XML con imágenes', xml.encode('utf-8'), 'preguntas_moodle.xml', 'application/xml', type='primary')
@@ -108,5 +111,6 @@ else:
 with st.expander('Cómo importar en Moodle'):
     st.write('Abrí el banco de preguntas del curso → Importar. Para un archivo .gift, elegí «Formato GIFT»; para un archivo .xml, elegí «Formato Moodle XML». Cargá el archivo y pulsá Importar.')
     st.write('Si incluiste categoría, activá «Obtener categoría del archivo»; si no, seleccioná la categoría de destino. Hacé una primera prueba en una categoría de prueba y verificá las respuestas, las imágenes y su retroalimentación.')
+    st.write('Para mostrar la devolución general de cada pregunta, revisá «Opciones de revisión → Retroalimentación general» en el cuestionario de Moodle. Su visibilidad depende de esa configuración.')
     st.caption('El XML conserva el orden de las opciones y usa letras A, B, C… Podés modificar la configuración de las preguntas en Moodle después de importar.')
 st.caption('La app no genera preguntas con IA ni guarda un historial. Los archivos se procesan en el servidor donde se ejecuta la app.')

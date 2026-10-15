@@ -1,6 +1,6 @@
 # Generador GIFT y XML para Moodle · Una Vuelta
 
-Versión 1.2 de una microapp en Python y Streamlit. Convierte preguntas de opción múltiple con una sola respuesta correcta a GIFT o Moodle XML UTF-8. Moodle XML incluye las imágenes insertadas en el Word, tanto en el enunciado como en las opciones. No utiliza IA ni necesita claves de API.
+Versión 1.3 de una microapp en Python y Streamlit. Convierte preguntas de opción múltiple con una sola respuesta correcta a GIFT o Moodle XML UTF-8. Moodle XML incluye las imágenes insertadas en el Word, tanto en el enunciado como en las opciones. No utiliza IA ni necesita claves de API.
 
 ## Actualizar la app existente
 
@@ -11,6 +11,14 @@ Versión 1.2 de una microapp en Python y Streamlit. Convierte preguntas de opci�
 5. Subir un Word con imágenes, revisar la vista previa y descargar XML. En el banco de preguntas, elegir **Formato Moodle XML** para importarlo. Repetir una prueba con texto y GIFT.
 
 No hace falta crear una nueva app. Se agregó `image_xml.py`: es necesario subirlo junto con `app.py` y `gift_core.py`. Las dependencias no cambiaron.
+
+### Cambios de la versión 1.3
+
+- Permite una devolución general por pregunta con `Retroalimentación general: explicación` después de `Opción correcta`.
+- Funciona al pegar texto o subir Word/TXT y se conserva tanto en GIFT como en Moodle XML.
+- Puede coexistir con la retroalimentación de la opción correcta, escrita entre paréntesis.
+- La vista previa distingue ambos tipos de devolución. El campo es opcional y los documentos anteriores siguen funcionando.
+- Para actualizar, reemplazar juntos **app.py, gift_core.py e image_xml.py** por los incluidos en este ZIP, además de la guía, plantilla y pruebas. Las dependencias no cambian.
 
 ### Cambios de la versión 1.2
 
@@ -70,6 +78,32 @@ Opción correcta: B (Buenos Aires es la capital de Argentina.)
 - En Word, las letras deben estar escritas manualmente: la numeración automática de listas puede no extraerse. Se lee texto e imágenes compatibles de párrafos y celdas, pero no encabezados ni pies de página. Los cuadros de texto deben pasarse a párrafos normales. Las tablas combinadas o complejas pueden requerir copiar y ordenar el texto.
 - No admite varias respuestas correctas, verdadero/falso ni retroalimentación individual de cada distractor en esta versión.
 - Si hay errores, no se genera un archivo parcial.
+
+## Retroalimentación general de cada pregunta
+
+Ejemplo válido tanto para texto pegado como para Word y TXT:
+
+```text
+1. ¿Cuál es la capital de Argentina?
+A) Córdoba
+B) Buenos Aires
+C) Rosario
+D) Mendoza
+Opción correcta: B (Buenos Aires es la capital de Argentina.)
+Retroalimentación general: Para distinguir la capital de otras ciudades, revisá su función como sede del Gobierno nacional.
+
+2. ¿Qué formato permite importar preguntas en Moodle?
+A) GIFT
+B) PNG
+Opción correcta: A
+```
+
+- El nuevo campo es opcional y se escribe después del cierre `Opción correcta` y antes de la siguiente pregunta. También se acepta sin tilde y sin distinguir mayúsculas/minúsculas.
+- Escribir la devolución completa en **una sola línea en TXT o un solo párrafo de Word**, sin saltos manuales. Puede ser extensa: el ajuste automático del texto en Word no genera problemas. La etiqueta y su texto van juntos en ese mismo párrafo.
+- La explicación entre paréntesis sigue perteneciendo sólo a la respuesta correcta. El campo nuevo pertenece a la pregunta y puede existir con o sin aquella explicación.
+- No repetir la etiqueta en una misma pregunta ni dejarla vacía. Este campo admite texto; las imágenes se colocan en el enunciado o las opciones.
+- En GIFT se exporta como `####` dentro del bloque de respuestas; en XML como `<generalfeedback format="html">`. La app genera esas marcas automáticamente: no hay que escribirlas en el documento.
+- Para que la devolución se muestre a los estudiantes, configurar **Opciones de revisión → Retroalimentación general** en el cuestionario de Moodle, en los momentos deseados.
 
 ## Preparar un Word con imágenes
 

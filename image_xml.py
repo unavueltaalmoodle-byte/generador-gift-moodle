@@ -160,7 +160,7 @@ def make_xml(questions, category='', prefix='Pregunta'):
         name = ET.SubElement(node, 'name')
         text_element(name, 'text', f'{prefix.strip() or "Pregunta"} {index:03d}')
         rich_element(node, 'questiontext', question.stem, question.images)
-        rich_element(node, 'generalfeedback', '')
+        rich_element(node, 'generalfeedback', question.general_feedback)
         for tag, value in [('defaultgrade', '1.0000000'), ('penalty', '0.3333333'),
                            ('hidden', '0'), ('single', 'true'), ('shuffleanswers', '0'),
                            ('answernumbering', 'ABCD')]:

@@ -11,6 +11,7 @@ class Question:
     correct: str
     feedback: str = ""
     images: dict = field(default_factory=dict)
+    general_feedback: str = ""
 
 
 class FormatError(ValueError):
@@ -29,6 +30,7 @@ def parse_questions(text, images=None):
     stem, options, current = [], {}, None
     started_options = False
     number = 1
+    completed_question = None
 
     def location(lineno=None):
         excerpt = ' '.join(stem).strip()
@@ -47,7 +49,25 @@ def parse_questions(text, images=None):
             continue
         key = re.match(r'^(?:opcion|respuesta)\s+correcta\s*:\s*(.*)$', normalized(line))
         option = re.match(r'^([A-Z])\s*[).:-]\s*(.*)$', line, re.I)
-        if key:
+        general = re.match(r'^retroalimentacion\s+general\b', normalized(line))
+        if general:
+            match = re.match(r'^retroalimentacion\s+general\s*:', normalized(line))
+            if not match:
+                errors.append(f'Línea {lineno}: use «Retroalimentación general: explicación» después de «Opción correcta».')
+            elif completed_question is None:
+                errors.append(f'{location(lineno)}: «Retroalimentación general» debe ir después de «Opción correcta» y antes de la siguiente pregunta.')
+            elif completed_question.general_feedback:
+                errors.append(f'Pregunta {number - 1} · línea {lineno}: «Retroalimentación general» está repetida; escribí una sola línea o párrafo por pregunta.')
+            else:
+                value = line.split(':', 1)[1].strip()
+                if not value:
+                    errors.append(f'Pregunta {number - 1} · línea {lineno}: falta el texto de «Retroalimentación general».')
+                elif image_token.search(value):
+                    errors.append(f'Pregunta {number - 1} · línea {lineno}: la retroalimentación general admite texto; colocá las imágenes en el enunciado o en las opciones.')
+                else:
+                    completed_question.general_feedback = value
+        elif key:
+            completed_question = None
             value = line.split(':', 1)[1].strip()
             answer = re.fullmatch(r'([A-Z])\s*\.?\s*(?:\((.*)\)\s*\.?)?', value, re.I)
             if not answer:
@@ -69,10 +89,12 @@ def parse_questions(text, images=None):
                 if missing:
                     errors.append(f'{location(lineno)}: faltan los archivos de imágenes; subí el Word original.')
                 else:
-                    questions.append(Question('\n'.join(stem), options.copy(), answer.group(1).upper(), answer.group(2) or '', {token: images[token] for token in tokens}))
+                    completed_question = Question('\n'.join(stem), options.copy(), answer.group(1).upper(), answer.group(2) or '', {token: images[token] for token in tokens})
+                    questions.append(completed_question)
             number += 1
             stem, options, current, started_options = [], {}, None, False
         elif option:
+            completed_question = None
             letter, value = option.group(1).upper(), option.group(2)
             if letter in options:
                 errors.append(f'{location(lineno)}: opción {letter} repetida; puede faltar «Opción correcta» en la pregunta anterior.')
@@ -83,6 +105,7 @@ def parse_questions(text, images=None):
         elif started_options:
             errors.append(f'{location(lineno)}: texto sin etiqueta después de las opciones. Escriba cada opción en una sola línea y cierre con «Opción correcta: letra».')
         else:
+            completed_question = None
             if not stem:
                 line = re.sub(r'^(?:Pregunta\s+)?\d+\s*[).:-]\s*', '', line, flags=re.I)
             stem.append(line)
@@ -118,6 +141,8 @@ def make_gift(questions, category='', prefix='Pregunta'):
             if letter == q.correct and q.feedback:
                 line += '#' + escape_gift(q.feedback)
             lines.append(line)
+        if q.general_feedback:
+            lines.append('####' + escape_gift(q.general_feedback))
         lines.append('}')
         parts.append('\n'.join(lines))
     return '\n\n'.join(parts) + '\n'

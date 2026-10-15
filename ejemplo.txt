@@ -4,6 +4,7 @@ B) Buenos Aires
 C) Rosario
 D) Mendoza
 Opción correcta: B (Buenos Aires es la capital de Argentina.)
+Retroalimentación general: Para distinguir la capital del país de otras ciudades, revisá su función como sede del Gobierno nacional.
 
 2. ¿Qué archivo permite importar preguntas en Moodle?
 A) Un archivo GIFT
