@@ -6,7 +6,7 @@ from image_xml import read_docx_with_images, make_xml, IMAGE_TOKEN
 st.set_page_config(page_title='Generador GIFT y XML · Una Vuelta', page_icon='📝', layout='centered')
 st.title('Generador GIFT y XML para Moodle')
 st.write('Convertí preguntas de opción múltiple en un archivo listo para importar al banco de preguntas.')
-st.caption('Versión 1.3 · Una respuesta correcta por pregunta · Retroalimentación opcional · Imágenes de Word en Moodle XML')
+st.caption('Versión 1.4 · Una respuesta correcta por pregunta · Retroalimentación opcional · Imágenes de Word en Moodle XML')
 example = Path(__file__).with_name('ejemplo.txt').read_text(encoding='utf-8')
 
 
@@ -30,6 +30,7 @@ def preview(text, images):
 with st.expander('Cómo preparar las preguntas', expanded=True):
     st.write('Escribí las opciones con letras consecutivas: A), B), C)… Cada opción de texto debe ocupar una sola línea. Cerrá cada pregunta con «Opción correcta: B».')
     st.write('Para agregar retroalimentación: «Opción correcta: B (Explicación)». También se acepta un punto después de la letra o del paréntesis. El enunciado puede ocupar varias líneas.')
+    st.write('Para una devolución distinta por opción, agregá después de «Opción correcta» líneas como «Retroalimentación A: explicación», «Retroalimentación B: explicación», etc. Sirve tanto para la correcta como para las incorrectas. No dupliques la devolución de la correcta en una etiqueta y entre paréntesis.')
     st.write('Para una devolución general de la pregunta, agregá después de «Opción correcta» una línea «Retroalimentación general: explicación». Es opcional y puede coexistir con la devolución entre paréntesis. Escribí toda la devolución en una sola línea o párrafo; el ajuste automático de líneas de Word no afecta la lectura.')
     st.write('Con imágenes: subí un Word (.docx), con imágenes PNG, JPG o GIF insertadas «En línea con el texto». Colocá las imágenes del enunciado antes de A). Para una opción, insertá la imagen junto a su texto o en el párrafo inmediatamente posterior a su letra, antes de la siguiente opción. También podés escribir A) y luego insertar sólo la imagen.')
     st.caption('Las imágenes se guardan dentro del XML. Revisá su ubicación en la vista previa. Se conserva el texto y el orden de las imágenes; no el diseño, las tipografías ni el formato completo de Word.')
@@ -89,8 +90,8 @@ if text.strip():
                 for letter, option in question.options.items():
                     st.text(f'{"✓" if letter == question.correct else "·"} {letter})')
                     preview(option, question.images)
-                if question.feedback:
-                    st.text('Retroalimentación de la opción correcta: ' + question.feedback)
+                    if question.feedback_for(letter):
+                        st.text(f'Retroalimentación de {letter}: ' + question.feedback_for(letter))
                 if question.general_feedback:
                     st.text('Retroalimentación general de la pregunta: ' + question.general_feedback)
         if image_count:

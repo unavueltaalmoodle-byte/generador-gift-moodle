@@ -12,6 +12,10 @@ class Question:
     feedback: str = ""
     images: dict = field(default_factory=dict)
     general_feedback: str = ""
+    option_feedback: dict[str, str] = field(default_factory=dict)
+
+    def feedback_for(self, letter):
+        return self.option_feedback.get(letter, self.feedback if letter == self.correct else '')
 
 
 class FormatError(ValueError):
@@ -47,10 +51,29 @@ def parse_questions(text, images=None):
         line = raw.strip()
         if not line:
             continue
+        line = re.sub(r'^[•●▪]\s*(?=[A-Z]\s*[).:-])', '', line, flags=re.I)
         key = re.match(r'^(?:opcion|respuesta)\s+correcta\s*:\s*(.*)$', normalized(line))
         option = re.match(r'^([A-Z])\s*[).:-]\s*(.*)$', line, re.I)
         general = re.match(r'^retroalimentacion\s+general\b', normalized(line))
-        if general:
+        specific = re.match(r'^(?:retroalimentacion|feedback)(?:\s+para)?(?:\s+la)?(?:\s+opcion)?\s+([a-z])\s*:', normalized(line))
+        feedback_like = re.match(r'^(?:retroalimentacion|feedback)\b', normalized(line))
+        if specific:
+            letter = specific.group(1).upper()
+            value = line.split(':', 1)[1].strip()
+            label = f'Pregunta {number - 1} · línea {lineno}' if completed_question else location(lineno)
+            if completed_question is None:
+                errors.append(f'{label}: «Retroalimentación {letter}» debe ir después de «Opción correcta» y antes de la siguiente pregunta.')
+            elif letter not in completed_question.options:
+                errors.append(f'{label}: la opción {letter} de la retroalimentación no existe.')
+            elif letter in completed_question.option_feedback or (letter == completed_question.correct and completed_question.feedback):
+                errors.append(f'{label}: hay dos devoluciones para la opción {letter}. Usá una sola etiqueta o los paréntesis, sin duplicar.')
+            elif not value:
+                errors.append(f'{label}: falta el texto de «Retroalimentación {letter}». Escribí la etiqueta y la explicación juntas en una línea o párrafo.')
+            elif image_token.search(value):
+                errors.append(f'{label}: la retroalimentación por opción admite texto; colocá las imágenes en el enunciado o en las opciones.')
+            else:
+                completed_question.option_feedback[letter] = value
+        elif general:
             match = re.match(r'^retroalimentacion\s+general\s*:', normalized(line))
             if not match:
                 errors.append(f'Línea {lineno}: use «Retroalimentación general: explicación» después de «Opción correcta».')
@@ -66,6 +89,8 @@ def parse_questions(text, images=None):
                     errors.append(f'Pregunta {number - 1} · línea {lineno}: la retroalimentación general admite texto; colocá las imágenes en el enunciado o en las opciones.')
                 else:
                     completed_question.general_feedback = value
+        elif feedback_like:
+            errors.append(f'Línea {lineno}: use «Retroalimentación A: explicación» o «Retroalimentación general: explicación», después de «Opción correcta».')
         elif key:
             completed_question = None
             value = line.split(':', 1)[1].strip()
@@ -138,8 +163,9 @@ def make_gift(questions, category='', prefix='Pregunta'):
         lines = [f'::{title}::[plain]{escape_gift(q.stem)} {{']
         for letter, option in q.options.items():
             line = ('=' if letter == q.correct else '~') + escape_gift(option)
-            if letter == q.correct and q.feedback:
-                line += '#' + escape_gift(q.feedback)
+            feedback = q.feedback_for(letter)
+            if feedback:
+                line += '#' + escape_gift(feedback)
             lines.append(line)
         if q.general_feedback:
             lines.append('####' + escape_gift(q.general_feedback))

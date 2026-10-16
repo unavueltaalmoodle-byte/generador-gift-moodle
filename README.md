@@ -1,6 +1,6 @@
 # Generador GIFT y XML para Moodle · Una Vuelta
 
-Versión 1.3 de una microapp en Python y Streamlit. Convierte preguntas de opción múltiple con una sola respuesta correcta a GIFT o Moodle XML UTF-8. Moodle XML incluye las imágenes insertadas en el Word, tanto en el enunciado como en las opciones. No utiliza IA ni necesita claves de API.
+Versión 1.4 de una microapp en Python y Streamlit. Convierte preguntas de opción múltiple con una sola respuesta correcta a GIFT o Moodle XML UTF-8. Moodle XML incluye las imágenes insertadas en el Word, tanto en el enunciado como en las opciones. No utiliza IA ni necesita claves de API.
 
 ## Actualizar la app existente
 
@@ -11,6 +11,14 @@ Versión 1.3 de una microapp en Python y Streamlit. Convierte preguntas de opci�
 5. Subir un Word con imágenes, revisar la vista previa y descargar XML. En el banco de preguntas, elegir **Formato Moodle XML** para importarlo. Repetir una prueba con texto y GIFT.
 
 No hace falta crear una nueva app. Se agregó `image_xml.py`: es necesario subirlo junto con `app.py` y `gift_core.py`. Las dependencias no cambiaron.
+
+### Cambios de la versión 1.4
+
+- Devolución individual para cualquier opción (correcta o incorrecta), conservada en GIFT y XML.
+- Etiquetas `Retroalimentación A: explicación`, `Retroalimentación B: explicación`, etc., después de `Opción correcta`.
+- Admite también `Feedback A: explicación` y `Feedback para la Opción A: explicación`, con el texto en la misma línea o párrafo. No interpreta una línea que sólo diga «Feedback» como encabezado.
+- Mantiene la devolución general de la pregunta y el formato anterior con paréntesis. No permite dos devoluciones para la misma opción.
+- Tolera viñetas •, ● o ▪ delante de las letras de las opciones; nunca deduce cuál es la respuesta correcta a partir de las devoluciones.
 
 ### Cambios de la versión 1.3
 
@@ -76,8 +84,30 @@ Opción correcta: B (Buenos Aires es la capital de Argentina.)
 - Separar las preguntas con una línea en blanco para facilitar la lectura.
 - TXT: codificación UTF-8. Word: formato DOCX. Tamaño máximo procesado: 10 MB.
 - En Word, las letras deben estar escritas manualmente: la numeración automática de listas puede no extraerse. Se lee texto e imágenes compatibles de párrafos y celdas, pero no encabezados ni pies de página. Los cuadros de texto deben pasarse a párrafos normales. Las tablas combinadas o complejas pueden requerir copiar y ordenar el texto.
-- No admite varias respuestas correctas, verdadero/falso ni retroalimentación individual de cada distractor en esta versión.
+- No admite varias respuestas correctas, verdadero/falso ni emparejamiento en esta versión.
 - Si hay errores, no se genera un archivo parcial.
+
+## Devolución individual para cada opción
+
+```text
+1. ¿Cuál es la capital de Argentina?
+A) Córdoba
+B) Buenos Aires
+C) Rosario
+Opción correcta: B
+Retroalimentación A: Incorrecto. Córdoba no es la capital del país.
+Retroalimentación B: Correcto. Buenos Aires es la capital de Argentina.
+Retroalimentación C: Incorrecto. Rosario no es la capital del país.
+Retroalimentación general: Revisá las diferencias entre las ciudades mencionadas.
+```
+
+- Las devoluciones son opcionales; se pueden indicar sólo para algunas alternativas.
+- Todas van después de `Opción correcta` y antes de la siguiente pregunta, cada una con etiqueta y explicación juntas en una sola línea de TXT o un solo párrafo de Word. Puede ser un párrafo extenso que Word ajuste visualmente en varias líneas.
+- El cierre `Opción correcta: letra` es obligatorio. La app nunca lo infiere de palabras como «Correcto» o «Incorrecto».
+- Para la opción correcta podés seguir usando los paréntesis en lugar de la etiqueta, pero no ambos a la vez.
+- En Moodle, la devolución individual pertenece a la opción que el estudiante selecciona. La general pertenece a toda la pregunta.
+- El archivo `preguntas_1_a_4_formateadas.txt` incluido adapta el texto compartido al formato de la app; conserva los enunciados, las opciones y las devoluciones. Las letras correctas A, C, C, A se tomaron de las devoluciones explícitas del original. El «A)» duplicado dentro del texto de la opción B de la pregunta 4 se conserva para que la autora decida si corregirlo.
+- La pregunta 5 del texto compartido es una actividad de emparejamiento: no está incluida en ese ejemplo ni se convierte automáticamente. Para conservar devoluciones por caso, se recomienda dividirla en cuatro preguntas de opción múltiple. Para conservarla como una sola pregunta con cuatro desplegables y devoluciones individuales, otra alternativa es Cloze, que requiere agregar un nuevo tipo de pregunta a la app.
 
 ## Retroalimentación general de cada pregunta
 

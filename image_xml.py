@@ -168,7 +168,7 @@ def make_xml(questions, category='', prefix='Pregunta'):
         for letter, option in question.options.items():
             answer = rich_element(node, 'answer', option, question.images,
                                   fraction='100' if letter == question.correct else '0')
-            rich_element(answer, 'feedback', question.feedback if letter == question.correct else '')
+            rich_element(answer, 'feedback', question.feedback_for(letter))
     # CDATA conserva el HTML; las imágenes se adjuntan a su campo correspondiente.
     from xml.parsers.expat import ExpatError
     try:
